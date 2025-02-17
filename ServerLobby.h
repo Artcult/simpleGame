@@ -2,38 +2,27 @@
 #define SERVERLOBBY_H
 
 #include <QObject>
-//#include <memory>
-#include "lantcpserver.h"
-#include "playerconnection.h"
-#include "udpbroadcaster.h"
+#include <memory>
+#include "LanTcpServer.h"
+#include "PlayerConnection.h"
+#include "UdpBroadcaster.h"
+#include "LobbyInfo.h"
 
 /**
- * @brief The ServerLobby class manages a server lobby with player connections and optional UDP broadcasting.
+ * @brief Manages player connections, server state, and UDP broadcasts.
  */
 class ServerLobby : public QObject {
     Q_OBJECT
 public:
-    /**
-     * @brief Constructs a ServerLobby with the specified maximum players and port.
-     * @param maxPlayers Maximum number of players.
-     * @param port Port number for the server.
-     * @param parent Optional parent QObject.
-     */
-    explicit ServerLobby(int maxPlayers, quint16 port, QObject *parent = nullptr);
+    explicit ServerLobby(int maxPlayers, quint16 serverPort, quint16 broadcastPort, QObject *parent = nullptr);
 
-    /** Starts the lobby server. */
     bool startLobby();
-    /** Stops the lobby server. */
     void stopLobby();
 
-    /** Starts broadcasting server information via UDP. */
     void startBroadcast();
-    /** Stops UDP broadcasting. */
     void stopBroadcast();
 
-    /** Connects the local player as the server host. */
     bool connectAsHost(const QString &hostAddress);
-    /** Returns information about the lobby. */
     QString getLobbyInfo() const;
 
 signals:
@@ -43,21 +32,25 @@ signals:
     void broadcastStatusChanged(bool isActive);
     void hostConnectionStatus(bool success);
     void playerCountChanged(int currentPlayers);
+    void lobbyInfoUpdated(const LobbyInfo &info);
 
 private slots:
     void onPlayerConnected(const PlayerConnection &player);
     void onPlayerDisconnected(const PlayerConnection &player);
-    void handleConnectionRequest(const QString &address, quint16 port);
+    void updateLobbyInfo();
 
 private:
-    std::unique_ptr<LanTcpServer> server;   // Use smart pointers for safe memory management
+    std::unique_ptr<LanTcpServer> server;
     std::unique_ptr<UdpBroadcaster> broadcaster;
-    const int maxPlayers;                   // Mark constant values as const
-    const quint16 port;
+    LobbyInfo lobbyInfo;
+
+    const int maxPlayers;
+    const quint16 tcpPort;
+    const quint16 udpPort;
     QList<PlayerConnection> players;
 
-    /** @brief Checks if room is available in the lobby. */
     bool isRoomAvailable() const;
+    void refreshLobbyInfo();
 };
 
 #endif // SERVERLOBBY_H

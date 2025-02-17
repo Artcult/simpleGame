@@ -22,6 +22,10 @@ add_executable(simpleGame
   LobbyClient.h LobbyClient.cpp
   MainMenuController.h MainMenuController.cpp
   ServerLobby.h ServerLobby.cpp
+  PlayerConnection.h
+  LobbyInfo.h
+  GameAction.h
+  ChatMessage.h
 )
 target_link_libraries(simpleGame Qt${QT_VERSION_MAJOR}::Core)
 target_link_libraries(simpleGame Qt${QT_VERSION_MAJOR}::Network)
