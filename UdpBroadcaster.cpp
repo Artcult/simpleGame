@@ -23,5 +23,4 @@ void UdpBroadcaster::sendBroadcast() {
     QByteArray data = currentLobbyInfo.serialize();
     udpSocket.writeDatagram(data, QHostAddress::Broadcast, port);
     emit broadcastTick();
-    qDebug() << "Отправлен UDP-броадкаст с информацией о лобби";
 }

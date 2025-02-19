@@ -4,7 +4,7 @@
 ServerLobby::ServerLobby(QString lobbyName,int maxPlayers, quint16 serverPort, quint16 broadcastPort, QObject *parent)
     : QObject(parent), maxPlayers(maxPlayers), tcpPort(serverPort), udpPort(broadcastPort) {
 
-    lobbyInfo = LobbyInfo(lobbyName, maxPlayers,0, tcpPort);
+    lobbyInfo = LobbyInfo(lobbyName, QHostAddress::LocalHost, maxPlayers,0, tcpPort);
 
     if (!startServer()) {
         qDebug() << "Ошибка при запуске лобби!";

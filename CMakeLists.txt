@@ -29,6 +29,7 @@ add_executable(simpleGame
   LanTcpServer.h LanTcpServer.cpp
   UdpBroadcaster.h UdpBroadcaster.cpp
   UdpBroadcastListener.h UdpBroadcastListener.cpp
+  LanTcpClient.h LanTcpClient.cpp
 )
 target_link_libraries(simpleGame Qt${QT_VERSION_MAJOR}::Core)
 target_link_libraries(simpleGame Qt${QT_VERSION_MAJOR}::Network)

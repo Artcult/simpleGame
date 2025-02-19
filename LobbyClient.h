@@ -18,7 +18,7 @@ public slots:
 
 private:
     static constexpr const char* LOBBY_NAME = "DefaultLobby";
-    static constexpr int MAX_PLAYERS = 5;
+    static constexpr int MAX_PLAYERS = 2;
     static constexpr quint16 SERVER_PORT = 50505;
     static constexpr quint16 BROADCAST_PORT = 50005;
 

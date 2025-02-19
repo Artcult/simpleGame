@@ -4,7 +4,9 @@
 #include <QDebug>
 
 UdpBroadcastListener::UdpBroadcastListener(quint16 listenPort, QObject *parent)
-    : QObject(parent), port(listenPort) {}
+    : QObject(parent), port(listenPort) {
+    startListening();
+}
 
 void UdpBroadcastListener::startListening() {
     if (udpSocket.bind(QHostAddress::AnyIPv4, port, QUdpSocket::ShareAddress)) {
