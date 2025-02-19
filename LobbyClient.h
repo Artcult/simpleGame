@@ -4,6 +4,7 @@
 #include <QObject>
 #include "ServerLobby.h"
 #include "UdpBroadcastListener.h"
+#include "LanTcpClient.h"
 
 class LobbyClient : public QObject {
     Q_OBJECT
@@ -22,8 +23,11 @@ private:
     static constexpr quint16 SERVER_PORT = 50505;
     static constexpr quint16 BROADCAST_PORT = 50005;
 
+    void connectToLobby(const LobbyInfo &info);
+
     std::unique_ptr<ServerLobby> serverLobby;
     std::unique_ptr<UdpBroadcastListener> broadcastListener;
+    std::unique_ptr<LanTcpClient> client;
 };
 
 #endif // LOBBYCLIENT_H

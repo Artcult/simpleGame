@@ -15,13 +15,14 @@ LanTcpClient::~LanTcpClient() {
 }
 
 void LanTcpClient::connectToServer(const LobbyInfo &info) {
-    if (socket->state() == QAbstractSocket::ConnectedState) {
-        qDebug() << "Уже подключен!";
-        return;
+    if (socket->state() == QAbstractSocket::UnconnectedState) {
+        qDebug() << "Подключение к серверу:" << info.ipAddress.toString() << "Порт:" << info.tcpPort;
+        socket->connectToHost(info.ipAddress, info.tcpPort);
     }
-
-    qDebug() << "Подключение к серверу:" << info.ipAddress.toString() << "Порт:" << info.tcpPort;
-    socket->connectToHost(info.ipAddress, info.tcpPort);
+    else{
+    qDebug() << "Уже подключен!";
+    }
+   // return;
 }
 
 void LanTcpClient::disconnectFromServer() {
