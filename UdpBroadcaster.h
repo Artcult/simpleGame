@@ -22,6 +22,9 @@ private slots:
     void sendBroadcast();
 
 private:
+    void updateAddresses();
+    QList<QHostAddress> broadcastAddresses;
+    QList<QHostAddress> ipAddresses;
     QUdpSocket udpSocket;
     QTimer broadcastTimer;
     quint16 port;

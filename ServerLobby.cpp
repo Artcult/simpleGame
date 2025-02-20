@@ -1,14 +1,15 @@
 #include "ServerLobby.h"
 #include <QDebug>
+#include <QNetworkInterface>
 
 ServerLobby::ServerLobby(QString lobbyName,int maxPlayers, quint16 serverPort, quint16 broadcastPort, QObject *parent)
     : QObject(parent), maxPlayers(maxPlayers), tcpPort(serverPort), udpPort(broadcastPort) {
 
-    lobbyInfo = LobbyInfo(lobbyName, QHostAddress::LocalHost, maxPlayers,0, tcpPort);
+    lobbyInfo = LobbyInfo(lobbyName, QHostAddress::Any, maxPlayers,0, tcpPort);
 
     if (!startServer()) {
-        qDebug() << "Ошибка при запуске лобби!";
-        throw std::runtime_error("Не удалось запустить сервер");
+        qDebug() << "Err to start lobby!";
+        throw std::runtime_error("server not started");
     }
 
     startBroadcast();
@@ -21,23 +22,29 @@ bool ServerLobby::startServer() {
     connect(server.get(), &LanTcpServer::playerConnected, this, &ServerLobby::onPlayerConnected);
     connect(server.get(), &LanTcpServer::playerDisconnected, this, &ServerLobby::onPlayerDisconnected);
     connect(server.get(), &LanTcpServer::messageReceived, this, [](const PlayerConnection &player, const QByteArray &msg){
-        qDebug() << "Сообщение от" << player.playerName << ":" << msg;
+        qDebug() << "Message from " << player.playerName << ":" << msg;
     });
 
     if (server->startListening()) {
-        qDebug() << "Лобби сервер запущен на порту:" << tcpPort;
-
+        qDebug() << "Lobby start on port:" << tcpPort;
         // Подключаем хоста к серверу
         connectAsHost();
 
         // Обновляем информацию о лобби
         refreshLobbyInfo();
 
+        QList<QHostAddress> ipList = QNetworkInterface::allAddresses();
+        for (const QHostAddress &addr : ipList) {
+            qDebug() << "Accessing IP:" << addr.toString();
+        }
+
         return true;
     } else {
-        qDebug() << "Ошибка запуска лобби сервера!";
+        qDebug() << "Err Start Lobby!";
         return false;
     }
+
+
 }
 
 void ServerLobby::stopServer() {
@@ -46,7 +53,7 @@ void ServerLobby::stopServer() {
         server->stopListening();
     }
     players.clear();
-    qDebug() << "TCP сервер остановлен";
+    qDebug() << "TCP server stopped";
 }
 
 void ServerLobby::startBroadcast() {
@@ -57,22 +64,22 @@ void ServerLobby::startBroadcast() {
 
 void ServerLobby::stopBroadcast() {
     broadcaster->stopBroadcast();
-    qDebug() << "Броадкаст остановлен";
+    qDebug() << "UDP Broadcast Stopped";
 }
 
 bool ServerLobby::connectAsHost() {
     // Создаем подключение хоста
-    PlayerConnection host("Host", QHostAddress::LocalHost, true);
+    PlayerConnection host("Host", QHostAddress::Any, true);
 
     if (!isRoomAvailable()) {
-        qWarning() << "Лобби заполнено, хост не может подключиться";
+        qWarning() << "Lobby is full, sorry";
         return false;
     }
 
     players.append(host);
     emit playerConnected(host); // Сигнал для обновления UI или других модулей
 
-    qDebug() << "Хост подключен как:" << host.playerName;
+    qDebug() << "Host append as:" << host.playerName;
     return true;
 }
 
@@ -80,7 +87,7 @@ void ServerLobby::onPlayerConnected(const PlayerConnection &player) {
     // Проверяем на дублирование игроков
     for (const auto &existingPlayer : players) {
         if (existingPlayer.playerName == player.playerName) {
-            qWarning() << "Игрок с именем" << player.playerName << "уже в лобби!";
+            qWarning() << "Player with name" << player.playerName << "already in Lobby";
             server->disconnectPlayer(player);
             return;
         }
@@ -88,9 +95,9 @@ void ServerLobby::onPlayerConnected(const PlayerConnection &player) {
 
     if (isRoomAvailable()) {
         players.append(player);
-        qDebug() << player.playerName << "подключился.";
+        qDebug() << player.playerName << "appended";
     } else {
-        qWarning() << "Лобби заполнено, игрок отклонён:" << player.playerName;
+        qWarning() << "Lobby is full, player leave" << player.playerName;
         server->disconnectPlayer(player);
     }
     refreshLobbyInfo();
@@ -120,7 +127,7 @@ void ServerLobby::updateLobbyInfo() {
     refreshLobbyInfo();
 
     if (players.size() >= maxPlayers) {
-        qDebug() << "Лобби заполнено, стартуем игру!";
+        qDebug() << "Lobby is full? sart game!";
         server->stopAcceptingPlayers();
 
         // Проверяем, все ли игроки еще в сети перед стартом

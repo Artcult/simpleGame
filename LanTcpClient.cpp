@@ -16,11 +16,11 @@ LanTcpClient::~LanTcpClient() {
 
 void LanTcpClient::connectToServer(const LobbyInfo &info) {
     if (socket->state() == QAbstractSocket::UnconnectedState) {
-        qDebug() << "Подключение к серверу:" << info.ipAddress.toString() << "Порт:" << info.tcpPort;
+        qDebug() << "Podkluchenie k serveru:" << info.ipAddress.toString() << "Порт:" << info.tcpPort;
         socket->connectToHost(info.ipAddress, info.tcpPort);
     }
     else{
-    qDebug() << "Уже подключен!";
+    qDebug() << "Uje Podkluchen!";
     }
    // return;
 }
@@ -35,22 +35,22 @@ void LanTcpClient::sendMessage(const QByteArray &message) {
     if (socket->state() == QAbstractSocket::ConnectedState) {
         socket->write(message);
     } else {
-        qDebug() << "Ошибка: нет подключения к серверу!";
+        qDebug() << "Err net podklucheniya k serveru";
     }
 }
 
 void LanTcpClient::onConnected() {
-    qDebug() << "✅ Подключение к серверу установлено!";
+    qDebug() << "Podkluchenie ustanovleno";
     emit connected();
 }
 
 void LanTcpClient::onDisconnected() {
-    qDebug() << "❌ Подключение к серверу потеряно.";
+    qDebug() << "Podkluchenie poterano";
     emit disconnected();
 }
 
 void LanTcpClient::onReadyRead() {
     QByteArray data = socket->readAll();
-    qDebug() << "📩 Получено сообщение:" << QString::fromUtf8(data);
+    qDebug() << "Polucheno soobcheniye:" << QString::fromUtf8(data);
     emit messageReceived(data);
 }

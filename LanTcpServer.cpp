@@ -15,10 +15,10 @@ LanTcpServer::~LanTcpServer() {
 
 bool LanTcpServer::startListening() {
     if (!listen(QHostAddress::Any, serverPort)) {
-        qDebug() << "Не удалось запустить сервер на порту:" << serverPort;
+        qDebug() << "Ne udalos zapustitit server na portu:" << serverPort;
         return false;
     }
-    qDebug() << "Сервер запущен на порту:" << serverPort;
+    qDebug() << "server zapuschen na portu:" << serverPort;
     return true;
 }
 
@@ -29,23 +29,23 @@ void LanTcpServer::stopListening() {
     }
     close();
     clients.clear();
-    qDebug() << "Сервер остановлен";
+    qDebug() << "Server ostanovlen";
 }
 
 void LanTcpServer::stopAcceptingPlayers() {
     acceptingPlayers = false;
-    qDebug() << "Приём новых игроков остановлен";
+    qDebug() << "Priem igorkov ostnovlen";
 }
 
 void LanTcpServer::incomingConnection(qintptr socketDescriptor) {
     if (!acceptingPlayers) {
-        qDebug() << "Новое подключение отклонено: Лобби заполнено";
+        qDebug() << "lobbi polnoe, podkluchenie bilo otkloneno";
         return;
     }
 
     auto *socket = new QTcpSocket(this);
     if (!socket->setSocketDescriptor(socketDescriptor)) {
-        qCritical() << "Ошибка установки сокета:" << socket->errorString();
+        qCritical() << "err ustanovki socketa:" << socket->errorString();
         socket->deleteLater();
         return;
     }
@@ -57,7 +57,7 @@ void LanTcpServer::incomingConnection(qintptr socketDescriptor) {
     clients.insert(socket, player);
 
     emit playerConnected(player);
-    qDebug() << "Игрок подключён:" << player.playerName << player.ipAddress.toString();
+    qDebug() << "igrok podcluchen:" << player.playerName << player.ipAddress.toString();
 }
 
 PlayerConnection LanTcpServer::createPlayerFromSocket(QTcpSocket *socket) {
@@ -73,7 +73,7 @@ void LanTcpServer::onReadyRead() {
     QByteArray data = socket->readAll();
     PlayerConnection player = clients.value(socket);
     emit messageReceived(player, data);
-    qDebug() << "Сообщение от" << player.playerName << ":" << QString::fromUtf8(data);
+    qDebug() << "message ot" << player.playerName << ":" << QString::fromUtf8(data);
 }
 
 void LanTcpServer::onClientDisconnected() {
@@ -84,7 +84,7 @@ void LanTcpServer::onClientDisconnected() {
     clients.remove(socket);
     emit playerDisconnected(player);
 
-    qDebug() << "Игрок отключился:" << player.playerName;
+    qDebug() << "igorek otcluchilsa:" << player.playerName;
     socket->deleteLater();
 }
 

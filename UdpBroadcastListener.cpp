@@ -9,28 +9,42 @@ UdpBroadcastListener::UdpBroadcastListener(quint16 listenPort, QObject *parent)
 }
 
 void UdpBroadcastListener::startListening() {
-    if (udpSocket.bind(QHostAddress::AnyIPv4, port, QUdpSocket::ShareAddress)) {
+    if (udpSocket.bind(QHostAddress::Any, port, QUdpSocket::ShareAddress | QUdpSocket::ReuseAddressHint)) {
         connect(&udpSocket, &QUdpSocket::readyRead, this, &UdpBroadcastListener::processPendingDatagrams);
-        qDebug() << "Начат прием UDP-броадкастов на порту" << port;
+        qDebug() << "Listen UDP on port" << port;
     } else {
-        qCritical() << "Ошибка привязки порта" << port;
+        qCritical() << "Port async error" << port;
     }
 }
 
 void UdpBroadcastListener::stopListening() {
     udpSocket.close();
-    qDebug() << "Прием UDP-броадкастов остановлен";
+    qDebug() << "Stop Listen UDP";
 }
 
 void UdpBroadcastListener::processPendingDatagrams() {
     while (udpSocket.hasPendingDatagrams()) {
+        // Получаем датаграмму
         QNetworkDatagram datagram = udpSocket.receiveDatagram();
-        QByteArray data = datagram.data();
-        data.resize(datagram.data().size()); // Ресайзим дату перед десериализацией
 
+        // IP-адрес отправителя
+        QHostAddress senderIp = datagram.senderAddress();
+        quint16 senderPort = datagram.senderPort();
+
+        // Получаем данные
+        QByteArray data = datagram.data();
+
+        // Десериализуем LobbyInfo
         LobbyInfo info;
         info.deserialize(data);
+
+        // Устанавливаем IP-адрес отправителя в LobbyInfo
+        info.ipAddress = senderIp;
+
+        // Отправляем сигнал о найденном лобби
         emit lobbyFound(info);
-        qDebug() << "Получен UDP-броадкаст: Лобби" << info.lobbyName;
+
+        qDebug() << "Received UDP Lobby:" << info.lobbyName
+                 << "from IP:" << info.ipAddress;
     }
 }

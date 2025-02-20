@@ -4,11 +4,11 @@ ConsoleMainMenu::ConsoleMainMenu(QObject *parent)
     : IMainMenu(parent), in(stdin), out(stdout) {}
 
 void ConsoleMainMenu::showMenu(){
-    out << "\n=== Меню ===\n"
-        << "1. Быстрая игра\n"
-        << "2. Захостить сервер\n"
-        << "3. Выйти\n"
-        << "Выберите опцию: ";
+    out << "\n=== Menu ===\n"
+        << "1. Quick Game\n"
+        << "2. Host Game\n"
+        << "3. Exit Game\n"
+        << "Choice Option: ";
     out.flush();
 
     int choice;
@@ -25,7 +25,7 @@ void ConsoleMainMenu::showMenu(){
         emit closeGame();
         return;
     default:
-        out << "Некорректный выбор. Попробуйте снова.\n";
+        out << "Bruh...\n";
         out.flush();
     }
 }
