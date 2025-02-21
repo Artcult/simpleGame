@@ -8,27 +8,24 @@
 
 struct LobbyInfo : public INetworkSerializable {
     QString lobbyName;
-    QHostAddress ipAddress;
     int maxPlayers;
     int currentPlayers;
     quint16 tcpPort;
 
     LobbyInfo() = default;
-    LobbyInfo(const QString &name,const QHostAddress &ip, int max, int current, quint16 port)
-        : lobbyName(name), ipAddress(ip), maxPlayers(max), currentPlayers(current), tcpPort(port) {}
+    LobbyInfo(const QString &name, int max, int current, quint16 port)
+        : lobbyName(name), maxPlayers(max), currentPlayers(current), tcpPort(port) {}
 
     QByteArray serialize() const override {
         QByteArray data;
         QDataStream out(&data, QIODevice::WriteOnly);
-        out << lobbyName << ipAddress.QHostAddress::toString() << maxPlayers << currentPlayers << tcpPort;
+        out << lobbyName << maxPlayers << currentPlayers << tcpPort;
         return data;
     }
 
     void deserialize(const QByteArray &data) override {
         QDataStream in(data);
-        QString ipString;
-        in >> lobbyName >> ipString >> maxPlayers >> currentPlayers >> tcpPort;
-        ipAddress.setAddress(ipString);
+        in >> lobbyName >> maxPlayers >> currentPlayers >> tcpPort;
     }
 };
 

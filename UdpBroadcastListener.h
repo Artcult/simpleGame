@@ -9,13 +9,12 @@ class UdpBroadcastListener : public QObject {
     Q_OBJECT
 public:
     explicit UdpBroadcastListener(quint16 listenPort, QObject *parent = nullptr);
-    ~UdpBroadcastListener() = default;
 
     void startListening();
     void stopListening();
 
 signals:
-    void lobbyFound(const LobbyInfo &info);
+    void lobbyFound(const QHostAddress &senderIp,const LobbyInfo &info);
 
 private slots:
     void processPendingDatagrams();

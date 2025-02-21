@@ -1,5 +1,13 @@
 #include "ConsoleMainMenu.h"
 
+// #define RESET   "\033[0m"
+// #define RED     "\033[31m"
+// #define GREEN   "\033[32m"
+// #define YELLOW  "\033[33m"
+// #define BLUE    "\033[34m"
+// #define CYAN    "\033[36m"
+// #define BOLD    "\033[1m"
+
 ConsoleMainMenu::ConsoleMainMenu(QObject *parent)
     : IMainMenu(parent), in(stdin), out(stdout) {}
 
@@ -25,7 +33,8 @@ void ConsoleMainMenu::showMenu(){
         emit closeGame();
         return;
     default:
-        out << "Bruh...\n";
+        out << "Incorrect input\n"
+            << "Try Again\n";
         out.flush();
     }
 }

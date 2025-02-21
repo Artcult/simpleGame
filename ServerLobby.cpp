@@ -57,14 +57,16 @@ void ServerLobby::stopServer() {
 }
 
 void ServerLobby::startBroadcast() {
-    broadcaster = std::make_unique<UdpBroadcaster>(udpPort, this);
-    connect(broadcaster.get(), &UdpBroadcaster::broadcastTick, this, &ServerLobby::updateLobbyInfo);
+    if (!broadcaster) {
+        broadcaster = std::make_unique<UdpBroadcaster>(udpPort, this);
+        connect(this, &ServerLobby::lobbyInfoUpdated, broadcaster.get(), &UdpBroadcaster::refreshLobbyInfo);
+    }
+
     broadcaster->startBroadcast(lobbyInfo);
 }
 
 void ServerLobby::stopBroadcast() {
     broadcaster->stopBroadcast();
-    qDebug() << "UDP Broadcast Stopped";
 }
 
 bool ServerLobby::connectAsHost() {
