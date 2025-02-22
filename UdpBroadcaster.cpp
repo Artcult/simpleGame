@@ -18,7 +18,7 @@
 UdpBroadcaster::UdpBroadcaster(const quint16 broadcastPort, QObject *parent)
     : QObject(parent), port(broadcastPort) {
     updateAddresses();
-    connect(&broadcastTimer, &QTimer::timeout, this, &UdpBroadcaster::sendBroadcast);
+    connect(&broadcastTimer, &QTimer::timeout, this, &UdpBroadcaster::onSendBroadcast);
 }
 
 /**
@@ -55,7 +55,7 @@ void UdpBroadcaster::updateAddresses() {
  * Attempts to transmit the current lobby data to all detected broadcast addresses.
  * If sending fails for any address, the list of broadcast addresses is updated.
  */
-void UdpBroadcaster::sendBroadcast() {
+void UdpBroadcaster::onSendBroadcast() {
     bool validBroadcastAddresses = true;
 
     // Iterate through all known broadcast addresses and send data
@@ -69,15 +69,13 @@ void UdpBroadcaster::sendBroadcast() {
     if (!validBroadcastAddresses) {
         updateAddresses();
     }
-
-    emit broadcastTick();
 }
 
 /**
  * @brief Updates the broadcast data and restarts the timer.
  * @param  lobbyInfo The new lobby information to be broadcasted.
  */
-void UdpBroadcaster::refreshLobbyInfo(const LobbyInfo &lobbyInfo) {
+void UdpBroadcaster::onRefreshLobbyInfo(const LobbyInfo &lobbyInfo) {
     broadcastTimer.stop();  // Остановить отправку, пока обновляем данные
     currentData = lobbyInfo.serialize();
     broadcastTimer.start(1000);  // Перезапустить отправку

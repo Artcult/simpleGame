@@ -1,17 +1,19 @@
 #include "ConsoleMainMenu.h"
 
-// #define RESET   "\033[0m"
-// #define RED     "\033[31m"
-// #define GREEN   "\033[32m"
-// #define YELLOW  "\033[33m"
-// #define BLUE    "\033[34m"
-// #define CYAN    "\033[36m"
-// #define BOLD    "\033[1m"
-
+/**
+ * @brief Constructs the console main menu.
+ *        Initializes input and output streams.
+ * @param parent Parent QObject.
+ */
 ConsoleMainMenu::ConsoleMainMenu(QObject *parent)
     : IMainMenu(parent), in(stdin), out(stdout) {}
 
-void ConsoleMainMenu::showMenu(){
+/**
+ * @brief Displays the console menu and handles user selection.
+ *        Triggers corresponding signals based on the user's choice.
+ */
+void ConsoleMainMenu::showMenu() {
+    // Display menu options
     out << "\n=== Menu ===\n"
         << "1. Quick Game\n"
         << "2. Host Game\n"
@@ -20,19 +22,20 @@ void ConsoleMainMenu::showMenu(){
     out.flush();
 
     int choice;
-    in >> choice;
+    in >> choice; // Read user input
 
     switch (choice) {
     case 1:
-        emit connectToFirstFindedServer();
+        emit connectToFirstFindedServer(); // Signal to connect to the first available server
         return;
     case 2:
-        emit hostOwnLocalTcpServer();
+        emit hostOwnLocalTcpServer(); // Signal to host a game
         return;
     case 3:
-        emit closeGame();
+        emit closeGame(); // Signal to close the game
         return;
     default:
+        // Handle invalid input
         out << "Incorrect input\n"
             << "Try Again\n";
         out.flush();

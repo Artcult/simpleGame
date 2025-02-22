@@ -9,47 +9,131 @@
 #include "UdpBroadcaster.h"
 
 /**
- * @brief Manages player connections, server state, and UDP broadcasts.
+ * @brief Handles the game lobby, including player connections, server management,
+ *        and UDP broadcasting for lobby discovery.
  */
 class ServerLobby : public QObject {
     Q_OBJECT
 public:
-    explicit ServerLobby(QString lobbyName,int maxPlayers, quint16 serverPort, quint16 broadcastPort, QObject *parent = nullptr);
+    /**
+     * @brief Constructs a new ServerLobby instance.
+     * @param lobbyName The name of the lobby.
+     * @param maxPlayers The maximum number of players allowed in the lobby.
+     * @param serverPort The TCP port used for player connections.
+     * @param broadcastPort The UDP port used for lobby discovery broadcasting.
+     * @param parent The parent QObject (optional).
+     */
+    explicit ServerLobby(QString lobbyName, int maxPlayers, quint16 serverPort, quint16 broadcastPort, QObject *parent = nullptr);
 
+    /**
+     * @brief Starts the TCP server for player connections.
+     * @return True if the server started successfully, otherwise false.
+     */
     bool startServer();
+
+    /**
+     * @brief Stops the server and clears the player list.
+     */
     void stopServer();
 
+    /**
+     * @brief Resumes player search by accepting new connections and restarting the broadcast.
+     * @return True if the operation was successful, otherwise false.
+     */
+    bool resumeLobbySearch();
+
+    /**
+     * @brief Pauses player search by stopping new connections and halting the broadcast.
+     */
+    void pauseLobbySearch();
+
+    /**
+     * @brief Starts broadcasting lobby information over UDP.
+     */
     void startBroadcast();
+
+    /**
+     * @brief Stops the UDP broadcast.
+     */
     void stopBroadcast();
 
+    /**
+     * @brief Starts the game when the lobby is full.
+     */
     void startGame();
 
+    /**
+     * @brief Connects the host to the lobby.
+     * @return True if the host was successfully connected, otherwise false.
+     */
     bool connectAsHost();
 
 signals:
+    /**
+     * @brief Emitted when lobby information is updated.
+     * @param info The updated lobby information.
+     */
     void lobbyInfoUpdated(const LobbyInfo &info);
+
+    /**
+     * @brief Emitted when a new player connects.
+     * @param player The connected player.
+     */
     void playerConnected(const PlayerConnection &player);
+
+    /**
+     * @brief Emitted when a player disconnects.
+     * @param player The disconnected player.
+     */
     void playerDisconnected(const PlayerConnection &player);
+
+    /**
+     * @brief Emitted when the game is about to start.
+     * @param players The list of connected players.
+     */
     void gameStarting(const QList<PlayerConnection> &players);
 
 private slots:
+    /**
+     * @brief Handles a new player connection.
+     * @param player The connected player.
+     */
     void onPlayerConnected(const PlayerConnection &player);
+
+    /**
+     * @brief Handles player disconnection.
+     * @param player The disconnected player.
+     */
     void onPlayerDisconnected(const PlayerConnection &player);
-    void updateLobbyInfo();
+
+    /**
+     * @brief Handles incoming messages from players.
+     * @param player The sender of the message.
+     * @param msg The received message.
+     */
+    void onMessageRecived(const PlayerConnection &player, const QByteArray &msg);
 
 private:
-    std::unique_ptr<LanTcpServer> server;
-    std::unique_ptr<UdpBroadcaster> broadcaster;
+    std::unique_ptr<LanTcpServer> server;  ///< TCP server for managing player connections.
+    std::unique_ptr<UdpBroadcaster> broadcaster;  ///< UDP broadcaster for lobby discovery.
 
-    const QString lobbyName;
-    const int maxPlayers;
-    const quint16 tcpPort;
-    const quint16 udpPort;
+    const QString lobbyName;  ///< The name of the lobby.
+    const int maxPlayers;  ///< Maximum number of players allowed.
+    const quint16 tcpPort;  ///< TCP port for player connections.
+    const quint16 udpPort;  ///< UDP port for lobby broadcasting.
 
-    LobbyInfo lobbyInfo;
-    QList<PlayerConnection> players;
+    LobbyInfo lobbyInfo;  ///< Current lobby information.
+    QList<PlayerConnection> players;  ///< List of connected players.
 
+    /**
+     * @brief Checks if there is room for more players in the lobby.
+     * @return True if space is available, otherwise false.
+     */
     bool isRoomAvailable() const;
+
+    /**
+     * @brief Updates and broadcasts lobby information.
+     */
     void refreshLobbyInfo();
 };
 

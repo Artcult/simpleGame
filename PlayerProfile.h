@@ -6,21 +6,34 @@
 #include <QDataStream>
 #include <QHostInfo>
 
-struct PlayerProfile: public INetworkSerializable{
-    QString playerName;
+/**
+ * @brief Represents a player's profile.
+ */
+struct PlayerProfile : public INetworkSerializable {
+    QString playerName; ///< Name of the player.
 
-    PlayerProfile (const QString &name) : playerName(name) {}
+    /**
+     * @brief Constructs a PlayerProfile object.
+     * @param name Player's name.
+     */
+    PlayerProfile(const QString &name) : playerName(name) {}
 
-    QByteArray serialize() const override{
+    /**
+     * @brief Serializes the PlayerProfile object into a QByteArray.
+     * @return Serialized data.
+     */
+    QByteArray serialize() const override {
         QByteArray data;
-
         QDataStream out(&data, QIODevice::WriteOnly);
         out << playerName;
-
         return data;
     }
 
-    void deserialize(const QByteArray &data) override{
+    /**
+     * @brief Deserializes the PlayerProfile object from a QByteArray.
+     * @param data Serialized data.
+     */
+    void deserialize(const QByteArray &data) override {
         QDataStream in(data);
         in >> playerName;
     }

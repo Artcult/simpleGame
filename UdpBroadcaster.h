@@ -45,11 +45,12 @@ public:
      */
     void stopBroadcast();
 
-signals:
+public slots:
     /**
-     * @brief Emitted after each successful broadcast message.
+     * @brief Updates the broadcast data with new lobby information.
+     * @param lobbyInfo The new lobby information to broadcast.
      */
-    void broadcastTick();
+    void onRefreshLobbyInfo(const LobbyInfo &lobbyInfo);
 
 private slots:
     /**
@@ -58,12 +59,7 @@ private slots:
      * Attempts to send the current data to all known broadcast addresses.
      * If any transmission fails, the list of addresses is updated.
      */
-    void sendBroadcast();
-    /**
-     * @brief Updates the broadcast data with new lobby information.
-     * @param lobbyInfo The new lobby information to broadcast.
-     */
-    void refreshLobbyInfo(const LobbyInfo &lobbyInfo);
+    void onSendBroadcast();
 
 private:
     /**

@@ -1,51 +1,72 @@
 #include "LanTcpServer.h"
 #include <QDebug>
-
-#include "LanTcpServer.h"
 #include <QDataStream>
 #include <QHostAddress>
-#include <QDebug>
 
+/**
+ * @brief Constructs the LAN TCP server.
+ *
+ * @param port The port on which the server will listen.
+ * @param parent The parent QObject.
+ */
 LanTcpServer::LanTcpServer(quint16 port, QObject *parent)
     : QTcpServer(parent), serverPort(port) {}
 
+/**
+ * @brief Destructor for the LAN TCP server.
+ *
+ * Stops the server and disconnects all clients.
+ */
 LanTcpServer::~LanTcpServer() {
     stopListening();
 }
 
+/**
+ * @brief Starts listening for player connections.
+ *
+ * @return true if the server started successfully, false otherwise.
+ */
 bool LanTcpServer::startListening() {
-    if (!listen(QHostAddress::Any, serverPort)) {
-        qDebug() << "Ne udalos zapustitit server na portu:" << serverPort;
-        return false;
-    }
-    qDebug() << "server zapuschen na portu:" << serverPort;
-    return true;
+    setAcceptingPlayers(true);
+    return listen(QHostAddress::Any, serverPort);
 }
 
+/**
+ * @brief Stops the server and disconnects all clients.
+ */
 void LanTcpServer::stopListening() {
-    for (auto socket : clients.keys()) {
+    // Get a list of all connected player sockets
+    const QList<QTcpSocket *> sockets = players.keys();
+
+    // Disconnect each client and schedule them for deletion
+    for (QTcpSocket *socket : sockets) {
         socket->disconnectFromHost();
         socket->deleteLater();
     }
+
+    // Close the server and clear the player list
     close();
-    clients.clear();
-    qDebug() << "Server ostanovlen";
+    players.clear();
 }
 
-void LanTcpServer::stopAcceptingPlayers() {
-    acceptingPlayers = false;
-    qDebug() << "Priem igorkov ostnovlen";
+/**
+ * @brief Enables or disables accepting new player connections.
+ * @param allowNewPlayers If true, allows new players to connect; if false, stops accepting new connections.
+ */
+void LanTcpServer::setAcceptingPlayers(bool allowNewPlayers) {
+    acceptingPlayers = allowNewPlayers;
 }
 
+/**
+ * @brief Handles an incoming player connection.
+ *
+ * @param socketDescriptor The descriptor of the new connection.
+ */
 void LanTcpServer::incomingConnection(qintptr socketDescriptor) {
-    if (!acceptingPlayers) {
-        qDebug() << "lobbi polnoe, podkluchenie bilo otkloneno";
-        return;
-    }
+    if (!acceptingPlayers) return;
 
     auto *socket = new QTcpSocket(this);
     if (!socket->setSocketDescriptor(socketDescriptor)) {
-        qCritical() << "err ustanovki socketa:" << socket->errorString();
         socket->deleteLater();
         return;
     }
@@ -54,42 +75,56 @@ void LanTcpServer::incomingConnection(qintptr socketDescriptor) {
     connect(socket, &QTcpSocket::disconnected, this, &LanTcpServer::onClientDisconnected);
 
     PlayerConnection player = createPlayerFromSocket(socket);
-    clients.insert(socket, player);
+    players.insert(socket, player);
 
     emit playerConnected(player);
-    qDebug() << "igrok podcluchen:" << player.playerName << player.ipAddress.toString();
 }
 
+/**
+ * @brief Creates a PlayerConnection object from a socket.
+ *
+ * @param socket The socket associated with the player.
+ * @return The generated PlayerConnection object.
+ */
 PlayerConnection LanTcpServer::createPlayerFromSocket(QTcpSocket *socket) {
     QHostAddress ip = socket->peerAddress();
     QString playerName = QString("Player_%1").arg(ip.toString().right(5));
     return PlayerConnection(playerName, ip, false);
 }
 
+/**
+ * @brief Reads incoming messages from clients.
+ */
 void LanTcpServer::onReadyRead() {
     auto *socket = qobject_cast<QTcpSocket*>(sender());
     if (!socket) return;
 
     QByteArray data = socket->readAll();
-    PlayerConnection player = clients.value(socket);
+    PlayerConnection player = players.value(socket);
     emit messageReceived(player, data);
-    qDebug() << "message ot" << player.playerName << ":" << QString::fromUtf8(data);
 }
 
+/**
+ * @brief Handles player disconnections.
+ */
 void LanTcpServer::onClientDisconnected() {
     auto *socket = qobject_cast<QTcpSocket*>(sender());
     if (!socket) return;
 
-    PlayerConnection player = clients.value(socket);
-    clients.remove(socket);
+    PlayerConnection player = players.value(socket);
+    players.remove(socket);
     emit playerDisconnected(player);
 
-    qDebug() << "igorek otcluchilsa:" << player.playerName;
     socket->deleteLater();
 }
 
+/**
+ * @brief Disconnects a specific player from the server.
+ *
+ * @param player The player to be disconnected.
+ */
 void LanTcpServer::disconnectPlayer(const PlayerConnection &player) {
-    for (auto it = clients.begin(); it != clients.end(); ++it) {
+    for (auto it = players.begin(); it != players.end(); ++it) {
         if (it.value().playerName == player.playerName) {
             it.key()->disconnectFromHost();
             return;
@@ -97,14 +132,25 @@ void LanTcpServer::disconnectPlayer(const PlayerConnection &player) {
     }
 }
 
+/**
+ * @brief Sends a message to all connected players.
+ *
+ * @param message The message to be sent.
+ */
 void LanTcpServer::sendMessageToAll(const QByteArray &message) {
-    for (auto socket : clients.keys()) {
-        socket->write(message);
+    for (auto it = players.constBegin(); it != players.constEnd(); ++it) {
+        it.key()->write(message);
     }
 }
 
+/**
+ * @brief Sends a message to a specific player.
+ *
+ * @param player The recipient player.
+ * @param message The message to send.
+ */
 void LanTcpServer::sendMessageToPlayer(const PlayerConnection &player, const QByteArray &message) {
-    for (auto it = clients.begin(); it != clients.end(); ++it) {
+    for (auto it = players.constBegin(); it != players.constEnd(); ++it) {
         if (it.value().playerName == player.playerName) {
             it.key()->write(message);
             break;
