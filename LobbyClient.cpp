@@ -12,6 +12,8 @@ LobbyClient::LobbyClient(QObject *parent) : QObject(parent) {}
  */
 void LobbyClient::onHostOwnLocalTcpServer() {
     serverLobby = std::make_unique<ServerLobby>(LOBBY_NAME, MAX_PLAYERS, SERVER_PORT, BROADCAST_PORT, this);
+
+    onConnectToFirstFindedServer();
 }
 
 /**
@@ -55,8 +57,23 @@ void LobbyClient::initClient() {
         qDebug() << "Disconnected from the lobby!";
     });
 
-    connect(client.get(), &LanTcpClient::messageReceived, this, [](const QByteArray &msg) {
-        qDebug() << "Message from server:" << QString::fromUtf8(msg);
+    connect(client.get(), &LanTcpClient::messageReceived, this, [this](const QByteArray &msg) {
+        QString message = QString::fromUtf8(msg);
+        if (message.trimmed() == "/start") {
+            emit invokeGameActionMenu();
+        }
+
+        if (message.trimmed() == "/draw") {
+            emit invokeResults("No one won this game");
+        }
+
+        if (message.trimmed() == "/win") {
+            emit invokeResults("Congratulations, you won this game");
+        }
+
+        if (message.trimmed() == "/lose") {
+            emit invokeResults("Sorry, you lost this game");
+        }
     });
 
     connect(client.get(), &LanTcpClient::connectionError, this, [](const QString &error) {
@@ -71,4 +88,9 @@ void LobbyClient::initClient() {
  */
 void LobbyClient::onLobbyFinded(const QHostAddress &hostAdress, const LobbyInfo &info) {
     client->connectToServer(hostAdress, info);
+}
+
+void LobbyClient::onPlayerMadeChoice(int choice) {
+    QString message = "/choice " + QString::number(choice);
+    client->sendMessage(message.toUtf8());
 }

@@ -1,13 +1,15 @@
 #include <QCoreApplication>
-#include "MainMenuController.h"
+#include "GameController.h"
 #include "ConsoleMainMenu.h"
+#include "ConsoleGameAction.h"
 
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
 
     ConsoleMainMenu mainMenu;
-    MainMenuController gameController(&mainMenu);
+    ConsoleGameAction gameActionMenu;
+    GameController gameController(&mainMenu,&gameActionMenu);
 
     gameController.invokeMainMenu();
 

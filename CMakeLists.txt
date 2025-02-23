@@ -20,7 +20,7 @@ add_executable(simpleGame
   IMainMenu.h
   ConsoleMainMenu.h ConsoleMainMenu.cpp
   LobbyClient.h LobbyClient.cpp
-  MainMenuController.h MainMenuController.cpp
+  GameController.h GameController.cpp
   ServerLobby.h ServerLobby.cpp
   PlayerConnection.h
   LobbyInfo.h
@@ -30,6 +30,9 @@ add_executable(simpleGame
   UdpBroadcaster.h UdpBroadcaster.cpp
   UdpBroadcastListener.h UdpBroadcastListener.cpp
   LanTcpClient.h LanTcpClient.cpp
+  IGameActionMenu.h
+  ConsoleGameAction.h ConsoleGameAction.cpp
+
 )
 target_link_libraries(simpleGame Qt${QT_VERSION_MAJOR}::Core)
 target_link_libraries(simpleGame Qt${QT_VERSION_MAJOR}::Network)

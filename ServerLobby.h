@@ -62,12 +62,6 @@ public:
      */
     void startGame();
 
-    /**
-     * @brief Connects the host to the lobby.
-     * @return True if the host was successfully connected, otherwise false.
-     */
-    bool connectAsHost();
-
 signals:
     /**
      * @brief Emitted when lobby information is updated.
@@ -92,6 +86,7 @@ signals:
      * @param players The list of connected players.
      */
     void gameStarting(const QList<PlayerConnection> &players);
+
 
 private slots:
     /**
@@ -124,6 +119,7 @@ private:
 
     LobbyInfo lobbyInfo;  ///< Current lobby information.
     QList<PlayerConnection> players;  ///< List of connected players.
+    QMap<int, int> playerChoices;
 
     /**
      * @brief Checks if there is room for more players in the lobby.
@@ -135,6 +131,11 @@ private:
      * @brief Updates and broadcasts lobby information.
      */
     void refreshLobbyInfo();
+
+    int getPlayerId(const PlayerConnection &player);
+    void playerMove(int playerId, int choice);
+    void calculateWinners();
+    void sendWinnersAndLosers(const QList<int> &winners);
 };
 
 #endif // SERVERLOBBY_H

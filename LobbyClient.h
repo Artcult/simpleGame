@@ -15,6 +15,10 @@ public:
     explicit LobbyClient(QObject *parent = nullptr);
     ~LobbyClient() = default;
 
+signals:
+    void invokeGameActionMenu();
+    void invokeResults(QString result);
+
 public slots:
     /**
      * @brief Starts searching for available lobbies and connects to the first found one.
@@ -30,6 +34,8 @@ public slots:
      * @brief Closes the current game session and stops networking.
      */
     void onCloseGame();
+
+    void onPlayerMadeChoice(int choice);
 
     /**
      * @brief Handles a found lobby by attempting to connect to it.

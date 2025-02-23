@@ -38,7 +38,6 @@ bool ServerLobby::startServer() {
         return false;
     }
 
-    connectAsHost();
     refreshLobbyInfo();
     return true;
 }
@@ -97,31 +96,6 @@ void ServerLobby::stopBroadcast() {
 }
 
 /**
- * @brief Assigns the host role to the first player if no host exists.
- * @return True if the host was successfully assigned, otherwise false.
- */
-bool ServerLobby::connectAsHost() {
-    if (!isRoomAvailable()) {
-        qWarning() << "Lobby is full, sorry";
-        return false;
-    }
-
-    auto it = std::find_if(players.begin(), players.end(), [](const PlayerConnection &p) {
-        return p.isHost;
-    });
-
-    if (it != players.end()) {
-        return false;
-    }
-
-    PlayerConnection host("Host", QHostAddress::Any, true);
-    players.append(host);
-    emit playerConnected(host);
-
-    return true;
-}
-
-/**
  * @brief Handles a new player connection.
  * @param player The player that connected.
  */
@@ -166,7 +140,34 @@ void ServerLobby::onPlayerDisconnected(const PlayerConnection &player) {
  * @param msg The message content.
  */
 void ServerLobby::onMessageRecived(const PlayerConnection &player, const QByteArray &msg) {
-    qDebug() << "Message received from" << player.playerName;
+    QString message = QString::fromUtf8(msg).trimmed();
+
+    if (message.startsWith("/choice")) {
+        QStringList parts = message.split(" ");
+        if (parts.size() == 2) {
+            int choice = parts[1].toInt();
+
+            int playerId = getPlayerId(player);
+            playerMove(playerId, choice);
+
+            if (playerChoices.size() == players.size()) {
+                calculateWinners();
+            }
+        }
+    }
+}
+
+int ServerLobby::getPlayerId(const PlayerConnection &player) {
+    for (int i = 0; i < players.size(); ++i) {
+        if (players[i].ipAddress == player.ipAddress) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+void ServerLobby::playerMove(int playerId, int choice) {
+    playerChoices[playerId] = choice;
 }
 
 /**
@@ -199,11 +200,61 @@ void ServerLobby::refreshLobbyInfo() {
  * @brief Starts the game when the lobby is full.
  */
 void ServerLobby::startGame() {
-    emit gameStarting(players);
-
+    QString startMessage = "/start";
     for (const PlayerConnection &player : std::as_const(players)) {
         qDebug() << player.playerName << "@" << player.ipAddress.toString();
     }
+    server->sendMessageToAll(startMessage.toUtf8());
+
 }
 
+void ServerLobby::calculateWinners() {
+    QMap<int, int> choiceCount; // {1 (камень) -> количество, 2 (бумага) -> количество, 3 (ножницы) -> количество}
+    for (const auto &choice : playerChoices) {
+        choiceCount[choice]++;
+    }
 
+    QList<int> winners;
+    if (choiceCount.size() == 3 || choiceCount.size() == 1) {
+    } else {
+        int winningChoice = 0;
+        if (choiceCount.contains(1) && choiceCount.contains(3)) {
+            winningChoice = 1; // Камень бьет ножницы
+        } else if (choiceCount.contains(2) && choiceCount.contains(1)) {
+            winningChoice = 2; // Бумага бьет камень
+        } else if (choiceCount.contains(3) && choiceCount.contains(2)) {
+            winningChoice = 3; // Ножницы бьют бумагу
+        }
+
+        for (auto it = playerChoices.begin(); it != playerChoices.end(); ++it) {
+            if (it.value() == winningChoice) {
+                winners.append(it.key());
+            }
+        }
+    }
+
+    sendWinnersAndLosers(winners);
+}
+
+void ServerLobby::sendWinnersAndLosers(const QList<int> &winners) {
+    QString drawMessage = "/draw";
+    QString winMessage = "/win";
+    QString loseMessage = "/lose";
+
+    if (winners.isEmpty()) {
+
+        for (const auto &player : players) {
+            server->sendMessageToPlayer(player,drawMessage.toUtf8());
+        }
+        return;
+    }
+
+    for (const auto &player : players) {
+        int playerId = getPlayerId(player);
+        if (winners.contains(playerId)) {
+            server->sendMessageToPlayer(player, winMessage.toUtf8());
+        } else {
+            server->sendMessageToPlayer(player, loseMessage.toUtf8());
+        }
+    }
+}
