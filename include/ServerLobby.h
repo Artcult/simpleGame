@@ -9,7 +9,7 @@
 #include "UdpBroadcaster.h"
 
 /**
- * @brief Handles the game lobby, including player connections, server management,
+ * @brief Manages the game lobby, including player connections, server operations,
  *        and UDP broadcasting for lobby discovery.
  */
 class ServerLobby : public QObject {
@@ -19,14 +19,14 @@ public:
      * @brief Constructs a new ServerLobby instance.
      * @param lobbyName The name of the lobby.
      * @param maxPlayers The maximum number of players allowed in the lobby.
-     * @param serverPort The TCP port used for player connections.
-     * @param broadcastPort The UDP port used for lobby discovery broadcasting.
+     * @param serverPort The TCP port for player connections.
+     * @param broadcastPort The UDP port for broadcasting lobby availability.
      * @param parent The parent QObject (optional).
      */
     explicit ServerLobby(QString lobbyName, int maxPlayers, quint16 serverPort, quint16 broadcastPort, QObject *parent = nullptr);
 
     /**
-     * @brief Starts the TCP server for player connections.
+     * @brief Starts the TCP server to accept player connections.
      * @return True if the server started successfully, otherwise false.
      */
     bool startServer();
@@ -37,8 +37,8 @@ public:
     void stopServer();
 
     /**
-     * @brief Resumes player search by accepting new connections and restarting the broadcast.
-     * @return True if the operation was successful, otherwise false.
+     * @brief Resumes the search for players by allowing new connections and restarting the broadcast.
+     * @return True if successful, otherwise false.
      */
     bool resumeLobbySearch();
 
@@ -87,7 +87,6 @@ signals:
      */
     void gameStarting(const QList<PlayerConnection> &players);
 
-
 private slots:
     /**
      * @brief Handles a new player connection.
@@ -102,28 +101,28 @@ private slots:
     void onPlayerDisconnected(const PlayerConnection &player);
 
     /**
-     * @brief Handles incoming messages from players.
+     * @brief Processes incoming messages from players.
      * @param player The sender of the message.
      * @param msg The received message.
      */
     void onMessageRecived(const PlayerConnection &player, const QByteArray &msg);
 
 private:
-    std::unique_ptr<LanTcpServer> server;  ///< TCP server for managing player connections.
+    std::unique_ptr<LanTcpServer> server;  ///< TCP server that manages player connections.
     std::unique_ptr<UdpBroadcaster> broadcaster;  ///< UDP broadcaster for lobby discovery.
 
     const QString lobbyName;  ///< The name of the lobby.
-    const int maxPlayers;  ///< Maximum number of players allowed.
-    const quint16 tcpPort;  ///< TCP port for player connections.
-    const quint16 udpPort;  ///< UDP port for lobby broadcasting.
+    const int maxPlayers;  ///< Maximum number of players allowed in the lobby.
+    const quint16 tcpPort;  ///< TCP port used for player connections.
+    const quint16 udpPort;  ///< UDP port used for broadcasting lobby information.
 
-    LobbyInfo lobbyInfo;  ///< Current lobby information.
-    QList<PlayerConnection> players;  ///< List of connected players.
-    QMap<int, int> playerChoices;
+    LobbyInfo lobbyInfo;  ///< Stores the current lobby information.
+    QList<PlayerConnection> players;  ///< List of currently connected players.
+    QMap<int, int> playerChoices; ///< Stores player choices in the game.
 
     /**
-     * @brief Checks if there is room for more players in the lobby.
-     * @return True if space is available, otherwise false.
+     * @brief Checks if there is space available in the lobby.
+     * @return True if there is room, otherwise false.
      */
     bool isRoomAvailable() const;
 
@@ -132,9 +131,29 @@ private:
      */
     void refreshLobbyInfo();
 
+    /**
+     * @brief Retrieves a player's unique ID based on their connection information.
+     * @param player The player whose ID needs to be determined.
+     * @return The player's ID, or -1 if not found.
+     */
     int getPlayerId(const PlayerConnection &player);
+
+    /**
+     * @brief Registers the player's move in the game.
+     * @param playerId The player's ID.
+     * @param choice The player's selected move (1 = Rock, 2 = Paper, 3 = Scissors).
+     */
     void playerMove(int playerId, int choice);
+
+    /**
+     * @brief Determines the winners of the game based on player choices.
+     */
     void calculateWinners();
+
+    /**
+     * @brief Sends game results (win/loss/draw) to players.
+     * @param winners A list of player IDs who won the round.
+     */
     void sendWinnersAndLosers(const QList<int> &winners);
 };
 

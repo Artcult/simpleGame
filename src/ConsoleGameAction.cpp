@@ -14,7 +14,7 @@ ConsoleGameAction::ConsoleGameAction(QObject *parent)
  */
 void ConsoleGameAction::showMenu() {
     while (true) {
-        // Display options
+        // Display available options
         out << "\n=== Choose your move ===\n"
             << "1. Rock\n"
             << "2. Paper\n"
@@ -26,7 +26,7 @@ void ConsoleGameAction::showMenu() {
         in >> choice; // Read user input
 
         if (choice >= 1 && choice <= 3) {
-            // Output player's choice
+            // Convert numerical choice into move name
             QString moveName;
             switch (choice) {
             case 1: moveName = "Rock"; break;
@@ -34,6 +34,7 @@ void ConsoleGameAction::showMenu() {
             case 3: moveName = "Scissors"; break;
             }
 
+            // Display the player's choice
             out << "You chose: " << moveName << "\n";
             out.flush();
 
@@ -46,13 +47,20 @@ void ConsoleGameAction::showMenu() {
     }
 }
 
+/**
+ * @brief Displays the game result message.
+ *        Waits for player input before closing the game.
+ * @param result The result message (e.g., "You won!", "You lost.", "It's a draw.").
+ */
 void ConsoleGameAction::showResult(QString result) {
+    // Show game result
     out << result << "\n";
     out << "Thank you for playing!\nPress Enter to exit...\n";
     out.flush();
 
-    in.readLine();
-    in.readLine();
+    // Pause execution until the user presses Enter
+    in.readLine(); // Clears any remaining input
+    in.readLine(); // Waits for the Enter key press
 
-    emit closeGame(); // Завершаем игру
+    emit closeGame(); // Emit signal to close the game
 }

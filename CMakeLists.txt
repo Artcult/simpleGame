@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(simpleGame LANGUAGES CXX)
+project(Quick-Rock-Paper-Scissors LANGUAGES CXX)
 
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
@@ -12,41 +12,59 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core Network)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Network)
 
-add_executable(simpleGame
+include_directories(include)
+
+add_executable(Quick-Rock-Paper-Scissors
   main.cpp
 
-  PlayerProfile.h
-  INetworkSerializable.h
-  IMainMenu.h
-  ConsoleMainMenu.h ConsoleMainMenu.cpp
-  LobbyClient.h LobbyClient.cpp
-  GameController.h GameController.cpp
-  ServerLobby.h ServerLobby.cpp
-  PlayerConnection.h
-  LobbyInfo.h
-  GameAction.h
-  ChatMessage.h
-  LanTcpServer.h LanTcpServer.cpp
-  UdpBroadcaster.h UdpBroadcaster.cpp
-  UdpBroadcastListener.h UdpBroadcastListener.cpp
-  LanTcpClient.h LanTcpClient.cpp
-  IGameActionMenu.h
-  ConsoleGameAction.h ConsoleGameAction.cpp
+  include/GameController.h
+  include/LobbyClient.h
+  include/ServerLobby.h
+
+  include/INetworkSerializable.h
+  include/IMainMenu.h
+  include/IGameActionMenu.h
+
+  include/LanTcpServer.h
+  include/LanTcpClient.h
+  include/UdpBroadcaster.h
+  include/UdpBroadcastListener.h
+
+  include/PlayerProfile.h
+  include/PlayerConnection.h
+  include/LobbyInfo.h
+  include/GameAction.h
+  include/ChatMessage.h
+
+  src/LobbyClient.cpp
+  src/GameController.cpp
+  src/ServerLobby.cpp
+
+  src/LanTcpServer.cpp
+  src/LanTcpClient.cpp
+  src/UdpBroadcaster.cpp
+  src/UdpBroadcastListener.cpp
+
+
+  include/ConsoleGameAction.h
+  src/ConsoleGameAction.cpp
+  src/ConsoleMainMenu.cpp
+  include/ConsoleMainMenu.h
 
 )
-target_link_libraries(simpleGame Qt${QT_VERSION_MAJOR}::Core)
-target_link_libraries(simpleGame Qt${QT_VERSION_MAJOR}::Network)
+target_link_libraries(Quick-Rock-Paper-Scissors Qt${QT_VERSION_MAJOR}::Core)
+target_link_libraries(Quick-Rock-Paper-Scissors Qt${QT_VERSION_MAJOR}::Network)
 
 include(GNUInstallDirs)
-install(TARGETS simpleGame
+install(TARGETS Quick-Rock-Paper-Scissors
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
 if(WIN32)
-    add_custom_command(TARGET simpleGame POST_BUILD
+    add_custom_command(TARGET Quick-Rock-Paper-Scissors POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E echo "Deploying Qt dependencies..."
-        COMMAND ${WINDEPLOYQT_EXECUTABLE} --release $<TARGET_FILE:simpleGame>
+        COMMAND ${WINDEPLOYQT_EXECUTABLE} --release $<TARGET_FILE:Quick-Rock-Paper-Scissors>
         COMMENT "Running windeployqt to include dependencies"
         VERBATIM
     )

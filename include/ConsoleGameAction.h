@@ -20,9 +20,15 @@ public:
 
     /**
      * @brief Displays the console menu and processes user input.
+     *        Players choose Rock, Paper, or Scissors.
      */
     void showMenu() override;
 
+    /**
+     * @brief Displays the result of the game.
+     *        Waits for player input before closing the game.
+     * @param result The result message (Win/Lose/Draw).
+     */
     void showResult(QString result) override;
 
 private:
@@ -31,3 +37,4 @@ private:
 };
 
 #endif // CONSOLEGAMEACTION_H
+

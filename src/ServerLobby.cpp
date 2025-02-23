@@ -3,7 +3,7 @@
 #include <QNetworkInterface>
 
 /**
- * @brief Constructs a ServerLobby instance and starts the server and broadcast.
+ * @brief Constructs a ServerLobby instance, starts the server, and begins broadcasting lobby information.
  * @param lobbyName The name of the lobby.
  * @param maxPlayers The maximum number of players allowed.
  * @param serverPort The TCP port for player connections.
@@ -13,26 +13,31 @@
 ServerLobby::ServerLobby(QString lobbyName, int maxPlayers, quint16 serverPort, quint16 broadcastPort, QObject *parent)
     : QObject(parent), maxPlayers(maxPlayers), tcpPort(serverPort), udpPort(broadcastPort) {
 
+    // Initialize lobby information
     lobbyInfo = LobbyInfo(lobbyName, maxPlayers, 0, tcpPort);
 
+    // Attempt to start the server, otherwise throw an error
     if (!startServer()) {
-        throw std::runtime_error("server not started");
+        throw std::runtime_error("Server not started");
     }
 }
 
 /**
  * @brief Starts the TCP server to accept player connections.
- * @return True if the server started successfully, otherwise false.
+ * @return True if the server starts successfully, otherwise false.
  */
 bool ServerLobby::startServer() {
-    if (server) return false;
+    if (server) return false; // Check if the server is already running
 
+    // Create a TCP server
     server = std::make_unique<LanTcpServer>(tcpPort, this);
 
+    // Connect server signals to their respective handlers
     connect(server.get(), &LanTcpServer::playerConnected, this, &ServerLobby::onPlayerConnected);
     connect(server.get(), &LanTcpServer::playerDisconnected, this, &ServerLobby::onPlayerDisconnected);
     connect(server.get(), &LanTcpServer::messageReceived, this, &ServerLobby::onMessageRecived);
 
+    // Start the server
     if (!server->startListening()) {
         server.reset();
         return false;
@@ -66,7 +71,7 @@ void ServerLobby::pauseLobbySearch() {
  */
 bool ServerLobby::resumeLobbySearch() {
     if (!server) {
-        return startServer();
+        return startServer(); // If the server is not running, try to restart it
     }
     server->setAcceptingPlayers(true);
     startBroadcast();
@@ -92,21 +97,22 @@ void ServerLobby::stopBroadcast() {
     if (broadcaster) {
         broadcaster->stopBroadcast();
     }
-
 }
 
 /**
  * @brief Handles a new player connection.
- * @param player The player that connected.
+ * @param player The connected player.
  */
 void ServerLobby::onPlayerConnected(const PlayerConnection &player) {
     if (!server) return;
 
+    // Check if there is space in the lobby
     if (!isRoomAvailable()) {
         server->disconnectPlayer(player);
         return;
     }
 
+    // Check if the player is already connected
     auto it = std::find_if(players.begin(), players.end(), [&](const PlayerConnection &p) {
         return p.playerName == player.playerName && p.ipAddress == player.ipAddress;
     });
@@ -116,18 +122,17 @@ void ServerLobby::onPlayerConnected(const PlayerConnection &player) {
         return;
     }
 
-    players.append(player);
-
+    players.append(player); // Add the player to the list
     refreshLobbyInfo();
 }
 
 /**
  * @brief Handles player disconnection by removing them from the list.
- * @param player The player that disconnected.
+ * @param player The player who disconnected.
  */
 void ServerLobby::onPlayerDisconnected(const PlayerConnection &player) {
     auto it = std::remove_if(players.begin(), players.end(), [&](const PlayerConnection &p) {
-        return p.ipAddress == player.ipAddress;  // Remove by IP, as names may be duplicated
+        return p.ipAddress == player.ipAddress;
     });
     players.erase(it, players.end());
 
@@ -135,7 +140,7 @@ void ServerLobby::onPlayerDisconnected(const PlayerConnection &player) {
 }
 
 /**
- * @brief Handles messages received from players.
+ * @brief Processes messages received from players.
  * @param player The sender of the message.
  * @param msg The message content.
  */
@@ -157,6 +162,11 @@ void ServerLobby::onMessageRecived(const PlayerConnection &player, const QByteAr
     }
 }
 
+/**
+ * @brief Gets the player ID based on their IP address.
+ * @param player The player.
+ * @return The player's ID or -1 if not found.
+ */
 int ServerLobby::getPlayerId(const PlayerConnection &player) {
     for (int i = 0; i < players.size(); ++i) {
         if (players[i].ipAddress == player.ipAddress) {
@@ -166,20 +176,25 @@ int ServerLobby::getPlayerId(const PlayerConnection &player) {
     return -1;
 }
 
+/**
+ * @brief Stores the player's choice (rock, paper, or scissors).
+ * @param playerId The player's ID.
+ * @param choice The player's choice (1 - rock, 2 - paper, 3 - scissors).
+ */
 void ServerLobby::playerMove(int playerId, int choice) {
     playerChoices[playerId] = choice;
 }
 
 /**
- * @brief Checks if there is space available in the lobby.
- * @return True if there is space, otherwise false.
+ * @brief Checks if there is room available in the lobby.
+ * @return True if space is available, otherwise false.
  */
 bool ServerLobby::isRoomAvailable() const {
     return players.size() < maxPlayers;
 }
 
 /**
- * @brief Updates the lobby information and broadcasts changes.
+ * @brief Updates the lobby information and starts the game if the lobby is full.
  */
 void ServerLobby::refreshLobbyInfo() {
     lobbyInfo.currentPlayers = players.size();
@@ -205,26 +220,23 @@ void ServerLobby::startGame() {
         qDebug() << player.playerName << "@" << player.ipAddress.toString();
     }
     server->sendMessageToAll(startMessage.toUtf8());
-
 }
 
+/**
+ * @brief Determines the winners of the game.
+ */
 void ServerLobby::calculateWinners() {
-    QMap<int, int> choiceCount; // {1 (камень) -> количество, 2 (бумага) -> количество, 3 (ножницы) -> количество}
+    QMap<int, int> choiceCount; // {1 (rock) -> count, 2 (paper) -> count, 3 (scissors) -> count}
     for (const auto &choice : playerChoices) {
         choiceCount[choice]++;
     }
 
     QList<int> winners;
     if (choiceCount.size() == 3 || choiceCount.size() == 1) {
+        // Draw
     } else {
-        int winningChoice = 0;
-        if (choiceCount.contains(1) && choiceCount.contains(3)) {
-            winningChoice = 1; // Камень бьет ножницы
-        } else if (choiceCount.contains(2) && choiceCount.contains(1)) {
-            winningChoice = 2; // Бумага бьет камень
-        } else if (choiceCount.contains(3) && choiceCount.contains(2)) {
-            winningChoice = 3; // Ножницы бьют бумагу
-        }
+        int winningChoice = (choiceCount.contains(1) && choiceCount.contains(3)) ? 1 :
+                                (choiceCount.contains(2) && choiceCount.contains(1)) ? 2 : 3;
 
         for (auto it = playerChoices.begin(); it != playerChoices.end(); ++it) {
             if (it.value() == winningChoice) {
@@ -236,6 +248,9 @@ void ServerLobby::calculateWinners() {
     sendWinnersAndLosers(winners);
 }
 
+/**
+ * @brief Sends game results (win/loss/draw) to players.
+ */
 void ServerLobby::sendWinnersAndLosers(const QList<int> &winners) {
     QString drawMessage = "/draw";
     QString winMessage = "/win";
@@ -258,3 +273,5 @@ void ServerLobby::sendWinnersAndLosers(const QList<int> &winners) {
         }
     }
 }
+
+

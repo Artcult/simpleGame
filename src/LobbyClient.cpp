@@ -9,15 +9,16 @@ LobbyClient::LobbyClient(QObject *parent) : QObject(parent) {}
 
 /**
  * @brief Creates and starts hosting a local TCP server for players to join.
+ *        Once hosted, the client automatically connects to the newly created server.
  */
 void LobbyClient::onHostOwnLocalTcpServer() {
     serverLobby = std::make_unique<ServerLobby>(LOBBY_NAME, MAX_PLAYERS, SERVER_PORT, BROADCAST_PORT, this);
-
-    onConnectToFirstFindedServer();
+    onConnectToFirstFindedServer();  // Auto-connect to the hosted server
 }
 
 /**
  * @brief Searches for an available lobby and connects to the first one found.
+ *        Starts a UDP broadcast listener to discover available game lobbies.
  */
 void LobbyClient::onConnectToFirstFindedServer() {
     initClient();
@@ -27,7 +28,7 @@ void LobbyClient::onConnectToFirstFindedServer() {
 }
 
 /**
- * @brief Stops any active game sessions and cleans up network resources.
+ * @brief Closes any active game sessions and cleans up networking resources.
  */
 void LobbyClient::onCloseGame() {
     if (serverLobby) {
@@ -42,10 +43,11 @@ void LobbyClient::onCloseGame() {
 }
 
 /**
- * @brief Initializes the client for connecting to a lobby.
+ * @brief Initializes the TCP client for connecting to a lobby.
+ *        Ensures only one client instance is created.
  */
 void LobbyClient::initClient() {
-    if (client) return; // Already initialized
+    if (client) return; // Prevent reinitialization
     client = std::make_unique<LanTcpClient>(this);
 
     connect(client.get(), &LanTcpClient::connected, this, [this] {
@@ -57,21 +59,17 @@ void LobbyClient::initClient() {
         qDebug() << "Disconnected from the lobby!";
     });
 
+    // Handles incoming messages from the server
     connect(client.get(), &LanTcpClient::messageReceived, this, [this](const QByteArray &msg) {
-        QString message = QString::fromUtf8(msg);
-        if (message.trimmed() == "/start") {
+        QString message = QString::fromUtf8(msg).trimmed();
+
+        if (message == "/start") {
             emit invokeGameActionMenu();
-        }
-
-        if (message.trimmed() == "/draw") {
+        } else if (message == "/draw") {
             emit invokeResults("No one won this game");
-        }
-
-        if (message.trimmed() == "/win") {
+        } else if (message == "/win") {
             emit invokeResults("Congratulations, you won this game");
-        }
-
-        if (message.trimmed() == "/lose") {
+        } else if (message == "/lose") {
             emit invokeResults("Sorry, you lost this game");
         }
     });
@@ -90,7 +88,12 @@ void LobbyClient::onLobbyFinded(const QHostAddress &hostAdress, const LobbyInfo 
     client->connectToServer(hostAdress, info);
 }
 
+/**
+ * @brief Sends the player's choice to the server.
+ * @param choice The player's choice: 1 - Rock, 2 - Paper, 3 - Scissors.
+ */
 void LobbyClient::onPlayerMadeChoice(int choice) {
     QString message = "/choice " + QString::number(choice);
     client->sendMessage(message.toUtf8());
 }
+
